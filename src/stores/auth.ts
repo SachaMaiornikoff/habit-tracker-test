@@ -1,5 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import api from '@/services/api'
+import type { AxiosError } from 'axios'
 
 export interface User {
   id: string
@@ -21,6 +23,10 @@ export interface RegisterCredentials {
   lastName: string
 }
 
+interface ApiErrorResponse {
+  message?: string
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -28,43 +34,27 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && !!user.value)
 
   async function register(credentials: RegisterCredentials): Promise<void> {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Registration failed')
+    try {
+      const { data } = await api.post('/auth/register', credentials)
+      token.value = data.token
+      user.value = data.user
+      localStorage.setItem('token', data.token)
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>
+      throw new Error(axiosError.response?.data?.message || 'Registration failed')
     }
-
-    const data = await response.json()
-    token.value = data.token
-    user.value = data.user
-    localStorage.setItem('token', data.token)
   }
 
   async function login(credentials: LoginCredentials): Promise<void> {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Login failed')
+    try {
+      const { data } = await api.post('/auth/login', credentials)
+      token.value = data.token
+      user.value = data.user
+      localStorage.setItem('token', data.token)
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>
+      throw new Error(axiosError.response?.data?.message || 'Login failed')
     }
-
-    const data = await response.json()
-    token.value = data.token
-    user.value = data.user
-    localStorage.setItem('token', data.token)
   }
 
   function logout(): void {
@@ -78,19 +68,13 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    const response = await fetch('/api/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-    })
-
-    if (!response.ok) {
+    try {
+      const { data } = await api.get('/auth/me')
+      user.value = data.user
+    } catch {
       logout()
       throw new Error('Failed to fetch user')
     }
-
-    const data = await response.json()
-    user.value = data.user
   }
 
   return {

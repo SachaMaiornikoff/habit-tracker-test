@@ -3,7 +3,7 @@
 
 <template>
   <div>
-    <h1>Hello World</h1>
+    <h1>Habit Tracker</h1>
   </div>
 </template>
 

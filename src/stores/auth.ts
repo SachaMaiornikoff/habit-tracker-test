@@ -4,7 +4,9 @@ import { defineStore } from 'pinia'
 export interface User {
   id: string
   email: string
-  name: string
+  firstName: string
+  lastName: string
+  createdAt: string
 }
 
 export interface LoginCredentials {
@@ -15,7 +17,8 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   email: string
   password: string
-  name: string
+  firstName: string
+  lastName: string
 }
 
 export const useAuthStore = defineStore('auth', () => {

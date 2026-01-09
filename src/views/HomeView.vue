@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <RouterView />
+  <div>
+    <h1>Habit Tracker</h1>
+  </div>
 </template>
 
 <style scoped>

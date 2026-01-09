@@ -30,7 +30,7 @@ router.beforeEach((to) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'register' }
+    return { name: 'login' }
   }
 })
 

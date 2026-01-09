@@ -70,7 +70,7 @@ async function handleSubmit() {
       </form>
 
       <p class="register-link">
-        Don't have an account? <router-link to="/register">S'inscrire</router-link>
+        Don't have an account? <router-link to="/register">Register</router-link>
       </p>
     </div>
   </div>

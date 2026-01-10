@@ -30,6 +30,7 @@ interface ApiErrorResponse {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('token'))
+  const isInitialized = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
 
@@ -77,13 +78,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function initializeAuth(): Promise<void> {
+    if (isInitialized.value) {
+      return
+    }
+
+    if (token.value) {
+      try {
+        await fetchMe()
+      } catch {
+        // Token invalid, already logged out by fetchMe
+      }
+    }
+
+    isInitialized.value = true
+  }
+
   return {
     user,
     token,
     isAuthenticated,
+    isInitialized,
     register,
     login,
     logout,
     fetchMe,
+    initializeAuth,
   }
 })

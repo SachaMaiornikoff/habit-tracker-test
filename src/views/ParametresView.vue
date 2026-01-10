@@ -3,7 +3,7 @@
 
 <template>
   <div class="page-container">
-    <h1>Accueil</h1>
+    <h1>Paramètres</h1>
   </div>
 </template>
 

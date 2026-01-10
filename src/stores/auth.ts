@@ -24,7 +24,9 @@ export interface RegisterCredentials {
 }
 
 interface ApiErrorResponse {
-  message?: string
+  error?: {
+    message?: string
+  }
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -42,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('token', data.token)
     } catch (error) {
       const axiosError = error as AxiosError<ApiErrorResponse>
-      throw new Error(axiosError.response?.data?.message || 'Registration failed')
+      throw new Error(axiosError.response?.data?.error?.message || 'Registration failed')
     }
   }
 
@@ -54,7 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('token', data.token)
     } catch (error) {
       const axiosError = error as AxiosError<ApiErrorResponse>
-      throw new Error(axiosError.response?.data?.message || 'Login failed')
+      throw new Error(axiosError.response?.data?.error?.message || 'Login failed')
     }
   }
 
@@ -72,9 +74,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await api.get('/auth/me')
       user.value = data.user
-    } catch {
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>
       logout()
-      throw new Error('Failed to fetch user')
+      throw new Error(axiosError.response?.data?.error?.message || 'Failed to fetch user')
     }
   }
 

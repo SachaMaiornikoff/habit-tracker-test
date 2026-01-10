@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, ApiError } from '@/stores/auth'
 import type { LoginCredentials } from '@/stores/auth'
 
 const router = useRouter()
@@ -9,11 +9,11 @@ const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
-const error = ref('')
+const errors = ref<string[]>([])
 const isLoading = ref(false)
 
 async function handleSubmit() {
-  error.value = ''
+  errors.value = []
   isLoading.value = true
 
   const credentials: LoginCredentials = {
@@ -25,7 +25,11 @@ async function handleSubmit() {
     await authStore.login(credentials)
     router.push('/')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Login failed'
+    if (e instanceof ApiError) {
+      errors.value = e.messages
+    } else {
+      errors.value = [e instanceof Error ? e.message : 'Login failed']
+    }
   } finally {
     isLoading.value = false
   }
@@ -60,8 +64,11 @@ async function handleSubmit() {
           />
         </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
+        <div v-if="errors.length > 0" class="error-message">
+          <ul v-if="errors.length > 1">
+            <li v-for="(err, index) in errors" :key="index">{{ err }}</li>
+          </ul>
+          <span v-else>{{ errors[0] }}</span>
         </div>
 
         <button type="submit" :disabled="isLoading" class="submit-btn">
@@ -133,6 +140,19 @@ async function handleSubmit() {
   border-radius: 4px;
   margin-bottom: 1rem;
   font-size: 0.875rem;
+}
+
+.error-message ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.error-message li {
+  margin-bottom: 0.25rem;
+}
+
+.error-message li:last-child {
+  margin-bottom: 0;
 }
 
 .submit-btn {

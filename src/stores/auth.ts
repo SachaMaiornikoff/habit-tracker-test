@@ -23,10 +23,57 @@ export interface RegisterCredentials {
   lastName: string
 }
 
+interface ApiErrorDetail {
+  message: string
+  path?: string[]
+  code?: string
+  [key: string]: unknown
+}
+
 interface ApiErrorResponse {
+  success?: boolean
   error?: {
     message?: string
+    code?: string
+    details?: ApiErrorDetail[]
   }
+}
+
+export class ApiError extends Error {
+  messages: string[]
+
+  constructor(messages: string[]) {
+    super(messages.join('\n'))
+    this.messages = messages
+    this.name = 'ApiError'
+  }
+}
+
+function extractErrorMessages(error: unknown, fallbackMessage: string): string[] {
+  const axiosError = error as AxiosError<ApiErrorResponse>
+  const errorData = axiosError.response?.data?.error
+
+  if (!errorData) {
+    return [fallbackMessage]
+  }
+
+  // If details array exists and has messages, use them
+  if (errorData.details && errorData.details.length > 0) {
+    const detailMessages = errorData.details
+      .map((detail) => detail.message)
+      .filter((msg): msg is string => !!msg)
+
+    if (detailMessages.length > 0) {
+      return detailMessages
+    }
+  }
+
+  // Otherwise, use the root message
+  if (errorData.message) {
+    return [errorData.message]
+  }
+
+  return [fallbackMessage]
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -43,8 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = data.user
       localStorage.setItem('token', data.token)
     } catch (error) {
-      const axiosError = error as AxiosError<ApiErrorResponse>
-      throw new Error(axiosError.response?.data?.error?.message || 'Registration failed')
+      throw new ApiError(extractErrorMessages(error, 'Registration failed'))
     }
   }
 
@@ -55,8 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = data.user
       localStorage.setItem('token', data.token)
     } catch (error) {
-      const axiosError = error as AxiosError<ApiErrorResponse>
-      throw new Error(axiosError.response?.data?.error?.message || 'Login failed')
+      throw new ApiError(extractErrorMessages(error, 'Login failed'))
     }
   }
 
@@ -75,9 +120,8 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.get('/auth/me')
       user.value = data.user
     } catch (error) {
-      const axiosError = error as AxiosError<ApiErrorResponse>
       logout()
-      throw new Error(axiosError.response?.data?.error?.message || 'Failed to fetch user')
+      throw new ApiError(extractErrorMessages(error, 'Failed to fetch user'))
     }
   }
 

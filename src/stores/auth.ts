@@ -86,9 +86,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(credentials: RegisterCredentials): Promise<void> {
     try {
       const { data } = await api.post('/auth/register', credentials)
-      token.value = data.token
-      user.value = data.user
-      localStorage.setItem('token', data.token)
+      token.value = data.data.token
+      user.value = data.data.user
+      localStorage.setItem('token', data.data.token)
+      isInitialized.value = true
     } catch (error) {
       throw new ApiError(extractErrorMessages(error, 'Registration failed'))
     }
@@ -97,9 +98,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(credentials: LoginCredentials): Promise<void> {
     try {
       const { data } = await api.post('/auth/login', credentials)
-      token.value = data.token
-      user.value = data.user
-      localStorage.setItem('token', data.token)
+      token.value = data.data.token
+      user.value = data.data.user
+      localStorage.setItem('token', data.data.token)
+      isInitialized.value = true
     } catch (error) {
       throw new ApiError(extractErrorMessages(error, 'Login failed'))
     }
@@ -118,7 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { data } = await api.get('/auth/me')
-      user.value = data.user
+      user.value = data.data.user
     } catch (error) {
       logout()
       throw new ApiError(extractErrorMessages(error, 'Failed to fetch user'))

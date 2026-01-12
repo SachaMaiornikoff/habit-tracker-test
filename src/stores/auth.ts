@@ -120,9 +120,12 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { data } = await api.get('/auth/me')
-      user.value = data.data.user
+      user.value = data.data
     } catch (error) {
-      logout()
+      const axiosError = error as AxiosError
+      if (axiosError.response?.status === 401) {
+        logout()
+      }
       throw new ApiError(extractErrorMessages(error, 'Failed to fetch user'))
     }
   }

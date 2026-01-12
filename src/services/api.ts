@@ -32,7 +32,8 @@ api.interceptors.response.use(
       const requestUrl = error.config?.url || ''
       const isAuthRoute =
         requestUrl.includes('/auth/login') ||
-        requestUrl.includes('/auth/register')
+        requestUrl.includes('/auth/register') ||
+        requestUrl.includes('/auth/me')
 
       if (!isAuthRoute) {
         // Clear token and redirect to login on unauthorized (session expired)

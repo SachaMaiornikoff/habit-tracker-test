@@ -106,4 +106,16 @@ export async function deleteHabit(id: string): Promise<void> {
   await api.delete(`/habits/${id}`)
 }
 
+export interface GetHabitStreakResponse {
+  success: boolean
+  data: {
+    streak: number
+  }
+}
+
+export async function getHabitStreak(habitId: string): Promise<number> {
+  const response = await api.get<GetHabitStreakResponse>(`/habits/${habitId}/streak`)
+  return response.data.data.streak
+}
+
 export default api

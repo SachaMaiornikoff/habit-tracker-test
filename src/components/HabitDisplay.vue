@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import type { HabitValidation } from '@/types/habit'
-import { getHabitEntries, updateHabitEntry } from '@/services/api'
+import { getHabitEntries, updateHabitEntry, getHabitStreak } from '@/services/api'
 
 const props = defineProps<{
   habitId: string
@@ -16,6 +16,7 @@ const weekOffset = ref(0)
 const validations = ref<HabitValidation[]>([])
 const isLoading = ref(true)
 const updateError = ref<string | null>(null)
+const streak = ref<number | null>(null)
 
 // DEBUG: Forcer le skeleton à rester visible
 const DEBUG_FORCE_SKELETON = false
@@ -147,16 +148,31 @@ watch(weekOffset, () => {
   fetchWeekEntries()
 })
 
+async function fetchStreak() {
+  try {
+    streak.value = await getHabitStreak(props.habitId)
+  } catch {
+    // Silently fail - streak is non-critical
+    streak.value = null
+  }
+}
+
 // Initial fetch on mount
 onMounted(() => {
   fetchWeekEntries()
+  fetchStreak()
 })
 </script>
 
 <template>
   <div class="habit-display" :style="{ '--habit-color': color }">
     <div class="habit-header">
-      <span class="habit-name">{{ name }}</span>
+      <div class="habit-title-row">
+        <span class="habit-name">{{ name }}</span>
+        <span v-if="streak !== null && streak > 0" class="streak-badge">
+          🔥 {{ streak }} sem.
+        </span>
+      </div>
       <span v-if="!(isLoading || DEBUG_FORCE_SKELETON)" class="week-label">{{ weekLabel }}</span>
       <span v-else class="skeleton-week-label"></span>
     </div>
@@ -231,10 +247,25 @@ onMounted(() => {
   text-align: center;
 }
 
+.habit-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .habit-name {
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
+}
+
+.streak-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f59e0b;
+  background: #fef3c7;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
 }
 
 .week-label {

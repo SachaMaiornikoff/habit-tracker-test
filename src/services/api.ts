@@ -79,4 +79,31 @@ export async function updateHabitEntry(
   await api.put('/habit-entries', { habitId, date, completed })
 }
 
+// Habit API
+export interface Habit {
+  id: string
+  userId: string
+  title: string
+  color: string
+  weeklyTarget: number
+  createdAt: string
+  archivedAt: string | null
+}
+
+export interface UpdateHabitData {
+  title?: string
+  color?: string
+  weeklyTarget?: number
+  archivedAt?: string | null
+}
+
+export async function updateHabit(id: string, data: UpdateHabitData): Promise<Habit> {
+  const response = await api.patch<{ success: boolean; data: { habit: Habit } }>(`/habits/${id}`, data)
+  return response.data.data.habit
+}
+
+export async function deleteHabit(id: string): Promise<void> {
+  await api.delete(`/habits/${id}`)
+}
+
 export default api

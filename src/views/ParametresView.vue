@@ -1,23 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import api from '@/services/api'
+import api, { type Habit } from '@/services/api'
 import HabitCard from '@/components/HabitCard.vue'
 import CreateHabitModal from '@/components/CreateHabitModal.vue'
-
-interface Habit {
-  id: string
-  userId: string
-  title: string
-  color: string
-  weeklyTarget: number
-  createdAt: string
-  archivedAt: string | null
-}
+import DeleteHabitModal from '@/components/DeleteHabitModal.vue'
 
 const habits = ref<Habit[]>([])
 const isLoading = ref(false)
 const error = ref('')
 const showCreateModal = ref(false)
+const showDeleteModal = ref(false)
+const habitToEdit = ref<Habit | undefined>(undefined)
+const habitToDelete = ref<Habit | null>(null)
 
 async function fetchHabits() {
   isLoading.value = true
@@ -42,6 +36,39 @@ function handleHabitCreated() {
   fetchHabits()
 }
 
+function handleHabitUpdated() {
+  fetchHabits()
+}
+
+function handleHabitDeleted() {
+  fetchHabits()
+}
+
+function openCreateModal() {
+  habitToEdit.value = undefined
+  showCreateModal.value = true
+}
+
+function openEditModal(habit: Habit) {
+  habitToEdit.value = habit
+  showCreateModal.value = true
+}
+
+function closeCreateModal() {
+  showCreateModal.value = false
+  habitToEdit.value = undefined
+}
+
+function openDeleteModal(habit: Habit) {
+  habitToDelete.value = habit
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  habitToDelete.value = null
+}
+
 onMounted(() => {
   fetchHabits()
 })
@@ -54,7 +81,7 @@ onMounted(() => {
     <section class="habits-section">
       <div class="section-header">
         <h2>Mes habitudes</h2>
-        <button class="btn-add" @click="showCreateModal = true">
+        <button class="btn-add" @click="openCreateModal">
           + Nouvelle habitude
         </button>
       </div>
@@ -72,14 +99,26 @@ onMounted(() => {
           :title="habit.title"
           :color="habit.color"
           :weekly-target="habit.weeklyTarget"
+          @edit="openEditModal(habit)"
+          @delete="openDeleteModal(habit)"
         />
       </div>
     </section>
 
     <CreateHabitModal
       v-if="showCreateModal"
-      @close="showCreateModal = false"
+      :habit="habitToEdit"
+      @close="closeCreateModal"
       @created="handleHabitCreated"
+      @updated="handleHabitUpdated"
+    />
+
+    <DeleteHabitModal
+      v-if="showDeleteModal && habitToDelete"
+      :habit-id="habitToDelete.id"
+      :habit-title="habitToDelete.title"
+      @close="closeDeleteModal"
+      @deleted="handleHabitDeleted"
     />
   </div>
 </template>

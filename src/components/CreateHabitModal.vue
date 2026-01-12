@@ -1,17 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import api from '@/services/api'
+import { ref, computed, onMounted } from 'vue'
+import api, { updateHabit, type Habit } from '@/services/api'
+
+const props = defineProps<{
+  habit?: Habit
+}>()
 
 const emit = defineEmits<{
   close: []
   created: []
+  updated: []
 }>()
+
+const isEditMode = computed(() => !!props.habit)
 
 const title = ref('')
 const weeklyTarget = ref(3)
 const color = ref('#4A90D9')
 const isLoading = ref(false)
 const error = ref('')
+
+onMounted(() => {
+  if (props.habit) {
+    title.value = props.habit.title
+    weeklyTarget.value = props.habit.weeklyTarget
+    color.value = props.habit.color
+  }
+})
 
 const presetColors = [
   '#4A90D9',
@@ -49,19 +64,29 @@ async function handleSubmit() {
   isLoading.value = true
 
   try {
-    await api.post('/habits', {
-      title: title.value.trim(),
-      color: color.value,
-      weeklyTarget: weeklyTarget.value
-    })
-    emit('created')
+    if (isEditMode.value && props.habit) {
+      await updateHabit(props.habit.id, {
+        title: title.value.trim(),
+        color: color.value,
+        weeklyTarget: weeklyTarget.value
+      })
+      emit('updated')
+    } else {
+      await api.post('/habits', {
+        title: title.value.trim(),
+        color: color.value,
+        weeklyTarget: weeklyTarget.value
+      })
+      emit('created')
+    }
     emit('close')
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'response' in err) {
       const axiosError = err as { response?: { data?: { error?: { message?: string } } } }
-      error.value = axiosError.response?.data?.error?.message || 'Erreur lors de la création'
+      const defaultError = isEditMode.value ? 'Erreur lors de la modification' : 'Erreur lors de la création'
+      error.value = axiosError.response?.data?.error?.message || defaultError
     } else {
-      error.value = 'Erreur lors de la création'
+      error.value = isEditMode.value ? 'Erreur lors de la modification' : 'Erreur lors de la création'
     }
   } finally {
     isLoading.value = false
@@ -79,7 +104,7 @@ function handleOverlayClick(event: MouseEvent) {
   <div class="modal-overlay" @click="handleOverlayClick">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Nouvelle habitude</h2>
+        <h2>{{ isEditMode ? 'Modifier l\'habitude' : 'Nouvelle habitude' }}</h2>
         <button class="close-button" @click="emit('close')" aria-label="Fermer">
           &times;
         </button>
@@ -154,7 +179,7 @@ function handleOverlayClick(event: MouseEvent) {
             Annuler
           </button>
           <button type="submit" class="btn-submit" :disabled="isLoading">
-            {{ isLoading ? 'Création...' : 'Créer' }}
+            {{ isLoading ? (isEditMode ? 'Modification...' : 'Création...') : (isEditMode ? 'Modifier' : 'Créer') }}
           </button>
         </div>
       </form>

@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Habit, HabitValidation } from '@/types/habit'
+import { ref, computed, onMounted, watch } from 'vue'
+import type { HabitValidation } from '@/types/habit'
+import { getHabitEntries, updateHabitEntry } from '@/services/api'
 
 const props = defineProps<{
+  habitId: string
   color: string
   name: string
-  validations: HabitValidation[]
-}>()
-
-const emit = defineEmits<{
-  updateHabit: [habit: Habit]
-  weekChange: [weekStart: string]
 }>()
 
 const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-// Offset en semaines par rapport à la semaine courante (0 = cette semaine, -1 = semaine dernière, etc.)
+// State
 const weekOffset = ref(0)
+const validations = ref<HabitValidation[]>([])
+const isLoading = ref(true)
+const updateError = ref<string | null>(null)
+
+// DEBUG: Forcer le skeleton à rester visible
+const DEBUG_FORCE_SKELETON = false
 
 // Calcule le lundi de la semaine courante
 function getMondayOfCurrentWeek(): Date {
@@ -59,7 +61,7 @@ const weekLabel = computed(() => {
 
 const validationMap = computed(() => {
   const map = new Map<string, boolean>()
-  props.validations.forEach(v => map.set(v.date, v.completed))
+  validations.value.forEach(v => map.set(v.date, v.completed))
   return map
 })
 
@@ -71,21 +73,53 @@ function getDayNumber(date: string): number {
   return new Date(date).getDate()
 }
 
-function toggleValidation(date: string) {
-  const currentCompleted = isCompleted(date)
-  const updatedValidations = currentWeekDates.value.map(d => ({
-    date: d.date,
-    completed: d.date === date ? !currentCompleted : isCompleted(d.date)
-  }))
+async function fetchWeekEntries() {
+  isLoading.value = true
+  updateError.value = null
 
-  const habit: Habit = {
-    id: '',
-    name: props.name,
-    color: props.color,
-    validations: updatedValidations
+  const startDate = currentWeekDates.value[0].date
+  const endDate = currentWeekDates.value[6].date
+
+  try {
+    const entries = await getHabitEntries(props.habitId, startDate, endDate)
+    // Si une date est présente dans le tableau retourné, c'est qu'elle est complétée
+    validations.value = entries.map(entry => ({
+      date: entry.date,
+      completed: true
+    }))
+  } catch {
+    // 401 errors are handled by the API interceptor (redirect to login)
+    // For other errors, we keep the current state
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function toggleValidation(date: string) {
+  const currentCompleted = isCompleted(date)
+  const newCompleted = !currentCompleted
+
+  // Optimistic update
+  const existingIndex = validations.value.findIndex(v => v.date === date)
+  if (existingIndex !== -1) {
+    validations.value[existingIndex].completed = newCompleted
+  } else {
+    validations.value.push({ date, completed: newCompleted })
   }
 
-  emit('updateHabit', habit)
+  try {
+    await updateHabitEntry(props.habitId, date, newCompleted)
+    updateError.value = null
+  } catch {
+    // 401 errors are handled by the API interceptor (redirect to login)
+    // Revert optimistic update and show error for other errors
+    if (existingIndex !== -1) {
+      validations.value[existingIndex].completed = currentCompleted
+    } else {
+      validations.value = validations.value.filter(v => v.date !== date)
+    }
+    updateError.value = 'Veuillez recharger la page'
+  }
 }
 
 function isToday(date: string): boolean {
@@ -94,22 +128,46 @@ function isToday(date: string): boolean {
 
 function previousWeek() {
   weekOffset.value--
-  emit('weekChange', currentWeekDates.value[0].date)
 }
 
 function nextWeek() {
   weekOffset.value++
-  emit('weekChange', currentWeekDates.value[0].date)
 }
+
+// Fetch entries when week changes
+watch(weekOffset, () => {
+  fetchWeekEntries()
+})
+
+// Initial fetch on mount
+onMounted(() => {
+  fetchWeekEntries()
+})
 </script>
 
 <template>
   <div class="habit-display" :style="{ '--habit-color': color }">
     <div class="habit-header">
       <span class="habit-name">{{ name }}</span>
-      <span class="week-label">{{ weekLabel }}</span>
+      <span v-if="!(isLoading || DEBUG_FORCE_SKELETON)" class="week-label">{{ weekLabel }}</span>
+      <span v-else class="skeleton-week-label"></span>
     </div>
-    <div class="habit-content">
+    <div v-if="updateError" class="error-message">
+      {{ updateError }}
+    </div>
+    <!-- Skeleton pour la partie semaine -->
+    <div v-if="isLoading || DEBUG_FORCE_SKELETON" class="habit-content">
+      <div class="skeleton-arrow"></div>
+      <div class="habit-days">
+        <div v-for="i in 7" :key="i" class="day-item">
+          <div class="skeleton-day-label"></div>
+          <div class="skeleton-checkbox"></div>
+        </div>
+      </div>
+      <div class="skeleton-arrow"></div>
+    </div>
+    <!-- Contenu réel -->
+    <div v-else class="habit-content">
       <button class="nav-arrow" @click="previousWeek" aria-label="Semaine précédente">
         ‹
       </button>
@@ -153,6 +211,16 @@ function nextWeek() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
 }
 
 .habit-name {
@@ -261,5 +329,51 @@ function nextWeek() {
 .day-item.today .day-checkbox {
   border-color: var(--habit-color);
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Skeleton styles */
+.skeleton-week-label {
+  width: 100px;
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-arrow {
+  width: 24px;
+  height: 32px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-day-label {
+  width: 24px;
+  height: 14px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-checkbox {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 </style>

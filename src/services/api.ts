@@ -45,4 +45,38 @@ api.interceptors.response.use(
   }
 )
 
+// Habit Entries API
+export interface HabitEntry {
+  id: string
+  habitId: string
+  date: string
+  completed: boolean
+}
+
+export interface GetHabitEntriesResponse {
+  success: boolean
+  data: {
+    entries: HabitEntry[]
+  }
+}
+
+export async function getHabitEntries(
+  habitId: string,
+  startDate: string,
+  endDate: string
+): Promise<HabitEntry[]> {
+  const response = await api.get<GetHabitEntriesResponse>('/habit-entries', {
+    params: { habitId, startDate, endDate }
+  })
+  return response.data.data.entries
+}
+
+export async function updateHabitEntry(
+  habitId: string,
+  date: string,
+  completed: boolean
+): Promise<void> {
+  await api.put('/habit-entries', { habitId, date, completed })
+}
+
 export default api

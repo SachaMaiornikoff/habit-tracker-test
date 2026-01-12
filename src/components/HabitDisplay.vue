@@ -31,6 +31,14 @@ function getMondayOfCurrentWeek(): Date {
   return monday
 }
 
+// Formate une date en YYYY-MM-DD en utilisant l'heure locale (pas UTC)
+function formatDateLocal(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const currentWeekDates = computed(() => {
   const monday = getMondayOfCurrentWeek()
   monday.setDate(monday.getDate() + weekOffset.value * 7)
@@ -40,7 +48,7 @@ const currentWeekDates = computed(() => {
     const date = new Date(monday)
     date.setDate(monday.getDate() + i)
     dates.push({
-      date: date.toISOString().split('T')[0],
+      date: formatDateLocal(date),
       dayName: weekDays[i]
     })
   }

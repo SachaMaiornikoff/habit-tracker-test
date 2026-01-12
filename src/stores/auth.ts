@@ -120,7 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { data } = await api.get('/auth/me')
-      user.value = data.data
+      user.value = data.data.user
     } catch (error) {
       const axiosError = error as AxiosError
       if (axiosError.response?.status === 401) {

@@ -18,9 +18,6 @@ const isLoading = ref(true)
 const updateError = ref<string | null>(null)
 const streak = ref<number | null>(null)
 
-// DEBUG: Forcer le skeleton à rester visible
-const DEBUG_FORCE_SKELETON = false
-
 // Calcule le lundi de la semaine courante
 function getMondayOfCurrentWeek(): Date {
   const today = new Date()
@@ -173,14 +170,14 @@ onMounted(() => {
           🔥 {{ streak }} sem.
         </span>
       </div>
-      <span v-if="!(isLoading || DEBUG_FORCE_SKELETON)" class="week-label">{{ weekLabel }}</span>
+      <span v-if="!isLoading" class="week-label">{{ weekLabel }}</span>
       <span v-else class="skeleton-week-label"></span>
     </div>
     <div v-if="updateError" class="error-message">
       {{ updateError }}
     </div>
     <!-- Skeleton pour la partie semaine -->
-    <div v-if="isLoading || DEBUG_FORCE_SKELETON" class="habit-content">
+    <div v-if="isLoading" class="habit-content">
       <div class="skeleton-arrow"></div>
       <div class="habit-days">
         <div v-for="i in 7" :key="i" class="day-item">

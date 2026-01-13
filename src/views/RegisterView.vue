@@ -51,28 +51,28 @@ async function handleSubmit() {
 <template>
   <div class="register-container">
     <div class="register-card">
-      <h1>Register</h1>
+      <h1>Inscription</h1>
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label for="firstName">First Name</label>
+          <label for="firstName">Prénom</label>
           <input
             id="firstName"
             v-model="firstName"
             type="text"
             required
-            placeholder="Enter your first name"
+            placeholder="Entrez votre prénom"
           />
         </div>
 
         <div class="form-group">
-          <label for="lastName">Last Name</label>
+          <label for="lastName">Nom</label>
           <input
             id="lastName"
             v-model="lastName"
             type="text"
             required
-            placeholder="Enter your last name"
+            placeholder="Entrez votre nom"
           />
         </div>
 
@@ -83,18 +83,18 @@ async function handleSubmit() {
             v-model="email"
             type="email"
             required
-            placeholder="Enter your email"
+            placeholder="Entrez votre email"
           />
         </div>
 
         <div class="form-group">
-          <label for="password">Password</label>
+          <label for="password">Mot de passe</label>
           <input
             id="password"
             v-model="password"
             type="password"
             required
-            placeholder="Enter your password"
+            placeholder="Entrez votre mot de passe"
           />
         </div>
 
@@ -106,12 +106,12 @@ async function handleSubmit() {
         </div>
 
         <button type="submit" :disabled="isLoading" class="submit-btn">
-          {{ isLoading ? 'Registering...' : 'Register' }}
+          {{ isLoading ? 'Inscription...' : 'S\'inscrire' }}
         </button>
       </form>
 
       <p class="login-link">
-        Already have an account? <router-link to="/login">Login</router-link>
+        Déjà un compte ? <router-link to="/login">Se connecter</router-link>
       </p>
     </div>
   </div>
@@ -163,8 +163,8 @@ async function handleSubmit() {
 
 .form-group input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: #4A90D9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.25);
 }
 
 .error-message {
@@ -192,7 +192,7 @@ async function handleSubmit() {
 .submit-btn {
   width: 100%;
   padding: 0.75rem;
-  background: #007bff;
+  background: #4A90D9;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -202,7 +202,7 @@ async function handleSubmit() {
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #3a7bc8;
 }
 
 .submit-btn:disabled {
@@ -217,7 +217,7 @@ async function handleSubmit() {
 }
 
 .login-link a {
-  color: #007bff;
+  color: #4A90D9;
   text-decoration: none;
 }
 

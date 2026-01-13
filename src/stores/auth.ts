@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
 import type { AxiosError } from 'axios'
+import { hashPasswordForTransport } from '@/utils/security'
 
 export interface User {
   id: string
@@ -93,7 +94,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function register(credentials: RegisterCredentials): Promise<void> {
     try {
-      const { data } = await api.post('/auth/register', credentials)
+      const hashedCredentials = {
+        ...credentials,
+        password: hashPasswordForTransport(credentials.password),
+      }
+      const { data } = await api.post('/auth/register', hashedCredentials)
       token.value = data.data.token
       user.value = data.data.user
       localStorage.setItem('token', data.data.token)
@@ -105,7 +110,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(credentials: LoginCredentials): Promise<void> {
     try {
-      const { data } = await api.post('/auth/login', credentials)
+      const hashedCredentials = {
+        ...credentials,
+        password: hashPasswordForTransport(credentials.password),
+      }
+      const { data } = await api.post('/auth/login', hashedCredentials)
       token.value = data.data.token
       user.value = data.data.user
       localStorage.setItem('token', data.data.token)
@@ -156,7 +165,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function updateUser(data: UpdateUserData): Promise<void> {
     try {
-      const { data: response } = await api.patch('/auth/me', data)
+      const hashedData = {
+        ...data,
+        currentPassword: hashPasswordForTransport(data.currentPassword),
+        ...(data.password && { password: hashPasswordForTransport(data.password) }),
+      }
+      const { data: response } = await api.patch('/auth/me', hashedData)
       user.value = response.data.user
     } catch (error) {
       throw new ApiError(extractErrorMessages(error, 'Failed to update user'))

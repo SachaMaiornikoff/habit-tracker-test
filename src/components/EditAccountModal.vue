@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore, ApiError } from '@/stores/auth'
+import { validatePassword } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -34,9 +35,17 @@ async function handleSubmit() {
     return
   }
 
-  if (newPassword.value && newPassword.value !== confirmPassword.value) {
-    errors.value = ['Les mots de passe ne correspondent pas']
-    return
+  if (newPassword.value) {
+    const passwordErrors = validatePassword(newPassword.value)
+    if (passwordErrors.length > 0) {
+      errors.value = passwordErrors
+      return
+    }
+
+    if (newPassword.value !== confirmPassword.value) {
+      errors.value = ['Les mots de passe ne correspondent pas']
+      return
+    }
   }
 
   isLoading.value = true

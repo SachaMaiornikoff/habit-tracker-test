@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, ApiError } from '@/stores/auth'
 import type { RegisterCredentials } from '@/stores/auth'
+import { validatePassword } from '@/utils/validation'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -16,6 +17,13 @@ const isLoading = ref(false)
 
 async function handleSubmit() {
   errors.value = []
+
+  const passwordErrors = validatePassword(password.value)
+  if (passwordErrors.length > 0) {
+    errors.value = passwordErrors
+    return
+  }
+
   isLoading.value = true
 
   const credentials: RegisterCredentials = {

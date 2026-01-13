@@ -23,6 +23,14 @@ export interface RegisterCredentials {
   lastName: string
 }
 
+export interface UpdateUserData {
+  currentPassword: string
+  email?: string
+  password?: string
+  firstName?: string
+  lastName?: string
+}
+
 interface ApiErrorDetail {
   message: string
   path?: string[]
@@ -146,6 +154,15 @@ export const useAuthStore = defineStore('auth', () => {
     isInitialized.value = true
   }
 
+  async function updateUser(data: UpdateUserData): Promise<void> {
+    try {
+      const { data: response } = await api.patch('/auth/me', data)
+      user.value = response.data.user
+    } catch (error) {
+      throw new ApiError(extractErrorMessages(error, 'Failed to update user'))
+    }
+  }
+
   return {
     user,
     token,
@@ -156,5 +173,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchMe,
     initializeAuth,
+    updateUser,
   }
 })

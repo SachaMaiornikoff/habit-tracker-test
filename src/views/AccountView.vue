@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import EditAccountModal from '@/components/EditAccountModal.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+const showEditModal = ref(false)
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
@@ -39,11 +41,21 @@ function formatDate(dateString: string): string {
         <label>Membre depuis</label>
         <p>{{ formatDate(user.createdAt) }}</p>
       </div>
+
+      <button class="btn-edit" @click="showEditModal = true">
+        Modifier mes informations
+      </button>
     </div>
 
     <div v-else class="loading">
       Chargement...
     </div>
+
+    <EditAccountModal
+      v-if="showEditModal"
+      @close="showEditModal = false"
+      @updated="showEditModal = false"
+    />
   </div>
 </template>
 
@@ -93,5 +105,22 @@ function formatDate(dateString: string): string {
   text-align: center;
   color: #666;
   padding: 2rem;
+}
+
+.btn-edit {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #4A90D9;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-edit:hover {
+  background: #3a7bc8;
 }
 </style>
